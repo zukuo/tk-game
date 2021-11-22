@@ -3,15 +3,19 @@ from random import randint
 
 def movePlayer(event):
     global player, playerModels
+    leftBinds = ["Left", "a"]
+    rightBinds = ["Right", "d"]
+    upBinds = ["Up", "w"]
+    downBinds = ["Down", "s"]
 
     # movement
-    if event.keysym == "Left" or event.keysym == "a":
+    if event.keysym in leftBinds:
         canvas.move(player, -15, 0)
-    elif event.keysym == "Right" or event.keysym == "d":
+    elif event.keysym in rightBinds:
         canvas.move(player, 15, 0)
-    elif event.keysym == "Up" or event.keysym == "w":
+    elif event.keysym in upBinds:
         canvas.move(player, 0, -15)
-    elif event.keysym == "Down" or event.keysym == "s":
+    elif event.keysym in downBinds:
         canvas.move(player, 0, 15)
 
     # ship randomizer
