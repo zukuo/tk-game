@@ -1,30 +1,75 @@
 from tkinter import *
 from random import randint
 
-def movePlayer(event):
+def playerControls(event):
     global player, playerModels
-    leftBinds = ["Left", "a"]
-    rightBinds = ["Right", "d"]
-    upBinds = ["Up", "w"]
-    downBinds = ["Down", "s"]
 
-    # movement
-    if event.keysym in leftBinds:
-        canvas.move(player, -15, 0)
-    elif event.keysym in rightBinds:
-        canvas.move(player, 15, 0)
-    elif event.keysym in upBinds:
-        canvas.move(player, 0, -15)
-    elif event.keysym in downBinds:
-        canvas.move(player, 0, 15)
+    # movement / old
+    # if event.keysym in leftBinds:
+    #     canvas.move(player, -15, 0)
+    # elif event.keysym in rightBinds:
+    #     canvas.move(player, 15, 0)
+    # elif event.keysym in upBinds:
+    #     canvas.move(player, 0, -15)
+    # elif event.keysym in downBinds:
+    #     canvas.move(player, 0, 15)
 
     # ship randomizer
-    elif event.keysym == "r":
+    if event.keysym == "r":
         s = canvas.coords(player)
         l = len(playerModels)-1
         canvas.delete(player)
         playerImageRandom = playerModels[randint(0,l)]
         player = canvas.create_image(s[0], s[1], image=playerImageRandom)
+
+def generateMoveStatus():
+    # create a dictionary of binds
+    moveStatus[leftBinds] = False
+    moveStatus[rightBinds] = False
+    moveStatus[upBinds] = False
+    moveStatus[downBinds] = False
+
+def setMoveBinds():
+    for char in leftBinds:
+        window.bind("<KeyPress-%s>" % char, moveKeyPressed)
+        window.bind("<KeyRelease-%s>" % char, moveKeyReleased)
+    for char in rightBinds:
+        window.bind("<KeyPress-%s>" % char, moveKeyPressed)
+        window.bind("<KeyRelease-%s>" % char, moveKeyReleased)
+    for char in upBinds:
+        window.bind("<KeyPress-%s>" % char, moveKeyPressed)
+        window.bind("<KeyRelease-%s>" % char, moveKeyReleased)
+    for char in downBinds:
+        window.bind("<KeyPress-%s>" % char, moveKeyPressed)
+        window.bind("<KeyRelease-%s>" % char, moveKeyReleased)
+
+def moveKeyPressed(event):
+    # set bind true if pressed
+    if event.keysym in leftBinds:
+        moveStatus[leftBinds] = True
+    if event.keysym in rightBinds:
+        moveStatus[rightBinds] = True
+    if event.keysym in upBinds:
+        moveStatus[upBinds] = True
+    if event.keysym in downBinds:
+        moveStatus[downBinds] = True
+
+    # if bind is set to true then move player
+    if moveStatus[leftBinds] == True: canvas.move(player, -15, 0)
+    if moveStatus[rightBinds] == True: canvas.move(player, 15, 0)
+    if moveStatus[upBinds] == True: canvas.move(player, 0, -15)
+    if moveStatus[downBinds] == True: canvas.move(player, 0, 15)
+
+def moveKeyReleased(event):
+    # set bind false if released
+    if event.keysym in leftBinds:
+        moveStatus[leftBinds] = False
+    if event.keysym in rightBinds:
+        moveStatus[rightBinds] = False
+    if event.keysym in upBinds:
+        moveStatus[upBinds] = False
+    if event.keysym in downBinds:
+        moveStatus[downBinds] = False
 
 def playerShoot(self):
     global shotAvailable
@@ -109,8 +154,16 @@ canvas.create_text(20, 20, anchor=NW, font="terminus 20 bold", text=scoreText, f
 healthText = "Health: "
 canvas.create_text(20, 70, anchor=NW, font="terminus 20 bold", text=healthText, fill="#cc272a")
 
-# bind keys
-window.bind("<Key>", movePlayer)
+# setup keybindings
+moveStatus = {}
+leftBinds = ("Left", "a")
+rightBinds = ("Right", "d")
+upBinds = ("Up", "w")
+downBinds = ("Down", "s")
+generateMoveStatus()
+setMoveBinds()
+
+window.bind("<Key>", playerControls)
 window.bind("<Control-b>", bossKey)
 window.bind("<space>", playerShoot)
 
