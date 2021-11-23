@@ -39,6 +39,9 @@ def setMoveBinds():
 
 def moveKeyPressed(event):
     global playerSpeed
+    p = canvas.coords(player)
+    pWidth = playerImage.width()/2
+    pHeight = playerImage.height()/2
 
     # set bind true if pressed
     if event.keysym in leftBinds:
@@ -51,10 +54,10 @@ def moveKeyPressed(event):
         moveStatus[downBinds] = True
 
     # if bind is set to true then move player
-    if moveStatus[leftBinds] == True: canvas.move(player, -playerSpeed, 0)
-    if moveStatus[rightBinds] == True: canvas.move(player, playerSpeed, 0)
-    if moveStatus[upBinds] == True: canvas.move(player, 0, -playerSpeed)
-    if moveStatus[downBinds] == True: canvas.move(player, 0, playerSpeed)
+    if moveStatus[leftBinds] == True and p[0] > pWidth: canvas.move(player, -playerSpeed, 0)
+    if moveStatus[rightBinds] == True and p[0] < width-pWidth: canvas.move(player, playerSpeed, 0)
+    if moveStatus[upBinds] == True and p[1] > pHeight: canvas.move(player, 0, -playerSpeed)
+    if moveStatus[downBinds] == True and p[1] < height-pHeight: canvas.move(player, 0, playerSpeed)
 
 def moveKeyReleased(event):
     # set bind false if released
@@ -105,16 +108,69 @@ def drawAsteroid(tag):
     asteroidUpdate(tag)
 
 def asteroidUpdate(name):
-    global height
+    global height, shotAvailable, score
+
     canvas.move(name,0,7)
     canvas.update()
     asteroidCoords = canvas.coords(name)
+
+    # check if asteroid exists on screen, then execute if true
     if asteroidCoords:
         if asteroidCoords[1] > height:
             canvas.delete(name)
             drawAsteroid(name)
+
+        # check if asteroid collides with player
+        elif isColliding(name, player) == True:
+            canvas.delete(name)
+            updateHealth(-10)
+            drawAsteroid(name)
+
+        # check if asteroid collides with shot
+        elif isColliding(name, "shot") == True:
+            canvas.delete("shot")
+            canvas.delete(name)
+            shotAvailable = 1
+            updateScore(1)
+            drawAsteroid(name)
+
         else:
             window.after(30, asteroidUpdate, name)
+
+def updateScore(amount):
+    global score, scoreText, createScoreText
+    score += amount
+    scoreText = "Score: " + str(score)
+    canvas.delete(createScoreText)
+    createScoreText = canvas.create_text(20, 20, anchor=NW, font="terminus 20 bold", text=scoreText, fill="#3a852e")
+
+def updateHealth(amount):
+    global health, healthText, createHealthText
+    health += amount
+    healthText = "Health: " + str(health)
+    canvas.delete(createHealthText)
+    createHealthText = canvas.create_text(20, 70, anchor=NW, font="terminus 20 bold", text=healthText, fill="#cc272a")
+
+def isColliding(object1, object2):
+    # see if object1 is an image
+    if canvas.bbox(object1):
+        a = canvas.create_rectangle(canvas.bbox(object1), outline="")
+    else:
+        a = object1
+
+    # see if object2 is an image
+    if canvas.bbox(object2):
+        b = canvas.create_rectangle(canvas.bbox(object2), outline="")
+    else:
+        b = object2
+
+    x1, y1, x2, y2 = canvas.coords(a)
+    result = canvas.find_overlapping(x1, y1, x2, y2)
+
+    if b in result:
+        return True
+    else:
+        return False
 
 def fastShooting(event):
     global isFastShooting, playerShootSpeed, defaultPlayerShootSpeed
@@ -164,7 +220,7 @@ height = 900
 x = width / 2
 y = height / 2
 window = setWindowDimensions(width, height)
-canvas = Canvas(window, bg="#2b2b2b", width=width, height=height)
+canvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
 canvas.pack()
 
 # create the player
@@ -193,11 +249,15 @@ bossKeyToggle = 0
 bossKeyImage = PhotoImage(file="misc/bosskey.png")
 bossKeyLabel = Label(canvas, image=bossKeyImage, height=height, width=width)
 
-# set score and health
-scoreText = "Score: "
-canvas.create_text(20, 20, anchor=NW, font="terminus 20 bold", text=scoreText, fill="#3a852e")
-healthText = "Health: "
-canvas.create_text(20, 70, anchor=NW, font="terminus 20 bold", text=healthText, fill="#cc272a")
+# set score
+score = 0
+scoreText = "Score: " + str(score)
+createScoreText = canvas.create_text(20, 20, anchor=NW, font="terminus 20 bold", text=scoreText, fill="#3a852e")
+
+# set health
+health = 100
+healthText = "Health: " + str(health)
+createHealthText = canvas.create_text(20, 70, anchor=NW, font="terminus 20 bold", text=healthText, fill="#cc272a")
 
 # setup keybindings
 moveStatus = {}
