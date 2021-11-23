@@ -53,10 +53,14 @@ def moveKeyPressed(event):
         moveStatus[downBinds] = True
 
     # if bind is set to true then move player
-    if moveStatus[leftBinds] == True and p[0] > pWidth: canvas.move(player, -playerSpeed, 0)
-    if moveStatus[rightBinds] == True and p[0] < width-pWidth: canvas.move(player, playerSpeed, 0)
-    if moveStatus[upBinds] == True and p[1] > pHeight: canvas.move(player, 0, -playerSpeed)
-    if moveStatus[downBinds] == True and p[1] < height-pHeight: canvas.move(player, 0, playerSpeed)
+    if moveStatus[leftBinds] == True and p[0] > pWidth:
+        canvas.move(player, -playerSpeed, 0)
+    if moveStatus[rightBinds] == True and p[0] < width-pWidth:
+        canvas.move(player, playerSpeed, 0)
+    if moveStatus[upBinds] == True and p[1] > pHeight:
+        canvas.move(player, 0, -playerSpeed)
+    if moveStatus[downBinds] == True and p[1] < height-pHeight:
+        canvas.move(player, 0, playerSpeed)
 
 def moveKeyReleased(event):
     # set bind false if released
@@ -99,6 +103,56 @@ def playerShootUpdate(name):
     # using another if to prevent speeding up bullet
     if shotAvailable == 0:
         window.after(10, playerShootUpdate, name)
+
+def drawAlien(tag):
+    global width, height, alienImage
+
+    alienHeight = alienImage.height()
+    randomY = randint(alienHeight, 400)
+    randomX = [-100,width+100]
+    randomSide = randint(0,1)
+    alien = canvas.create_image(randomX[randomSide], randomY, image=alienImage, tag=tag)
+
+    if randomSide == 0:
+        alienUpdate(tag, "left")
+    elif randomSide == 1:
+        alienUpdate(tag, "right")
+
+def alienUpdate(name, side):
+    global width, shotAvailable, score
+
+    if side == "left":
+        canvas.move(name,7,0)
+    elif side == "right":
+        canvas.move(name,-7,0)
+    canvas.update()
+    alienCoords = canvas.coords(name)
+
+    # check if asteroid exists on screen, then execute if true
+    if alienCoords:
+        if (alienCoords[0] > width and side == "left" or
+            alienCoords[0] < 0 and side == "right"):
+            canvas.delete(name)
+            drawAlien(name)
+
+        # check if asteroid collides with player
+        elif isColliding(name, player) == True:
+            drawExplosion(name)
+            canvas.delete(name)
+            updateHealth(-10)
+            drawAlien(name)
+
+        # check if asteroid collides with shot
+        elif isColliding(name, "shot") == True:
+            drawExplosion(name)
+            canvas.delete("shot")
+            canvas.delete(name)
+            shotAvailable = 1
+            updateScore(1)
+            drawAlien(name)
+
+        else:
+            window.after(30, alienUpdate, name, side)
 
 def drawAsteroid(tag):
     global width, height, asteroidImage
@@ -206,11 +260,11 @@ def bossKey(event):
 
     elif bossKeyToggle == 0:
         bossKeyLabel.place_forget()
-        window.title("Space Invaders")
+        window.title("Space Shooters")
 
 def setWindowDimensions(w,h):
     window = Tk()
-    window.title("Space Invaders")
+    window.title("Space Shooters")
     ws = window.winfo_screenwidth() # computers screen size
     hs = window.winfo_screenheight()
     x = (ws/2) - (w/2) # calculates center
@@ -228,6 +282,10 @@ window = setWindowDimensions(width, height)
 canvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
 canvas.pack()
 
+backgroundImage = PhotoImage(file="background.gif").zoom(2)
+backgroundLabel = Label(window, image=backgroundImage)
+background = canvas.create_image(x, y, image=backgroundImage)
+
 # create the player
 playerModels = [PhotoImage(file="ships/ship1.png").subsample(5),
                 PhotoImage(file="ships/ship2.png").subsample(7),
@@ -243,6 +301,12 @@ playerSpeed = defaultPlayerSpeed
 playerShootSpeed = defaultPlayerShootSpeed
 isFastSpeed = 0
 isFastShooting = 0
+
+# aliens
+alienModels = [PhotoImage(file="aliens/alien1.png").subsample(9),
+               PhotoImage(file="aliens/alien1.gif").subsample(9)]
+alienImage = alienModels[0]
+drawAlien("alien")
 
 # asteroids
 asteroidModels = [PhotoImage(file="asteroids/asteroid1.png").subsample(3)]
