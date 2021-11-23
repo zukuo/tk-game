@@ -8,9 +8,8 @@ def playerControls(event):
     if event.keysym == "r":
         s = canvas.coords(player)
         l = len(playerModels)-1
-        canvas.delete(player)
         playerImageRandom = playerModels[randint(0,l)]
-        player = canvas.create_image(s[0], s[1], image=playerImageRandom)
+        canvas.itemconfig(player, image=playerImageRandom)
 
     # shoot when space is pressed
     if event.keysym == "space":
@@ -103,7 +102,7 @@ def playerShootUpdate(name):
 
 def drawAsteroid(tag):
     global width, height, asteroidImage
-    randomX = randint(100, width-100)
+    randomX = randint(200, width-200)
     asteroid = canvas.create_image(randomX, -50, image=asteroidImage, tag=tag)
     asteroidUpdate(tag)
 
@@ -122,12 +121,14 @@ def asteroidUpdate(name):
 
         # check if asteroid collides with player
         elif isColliding(name, player) == True:
+            drawExplosion(name)
             canvas.delete(name)
             updateHealth(-10)
             drawAsteroid(name)
 
         # check if asteroid collides with shot
         elif isColliding(name, "shot") == True:
+            drawExplosion(name)
             canvas.delete("shot")
             canvas.delete(name)
             shotAvailable = 1
@@ -137,19 +138,23 @@ def asteroidUpdate(name):
         else:
             window.after(30, asteroidUpdate, name)
 
+def drawExplosion(object):
+    global explosionImage
+    c = canvas.coords(object)
+    explosion = canvas.create_image(c[0], c[1], image=explosionImage)
+    window.after(250, lambda: canvas.delete(explosion))
+
 def updateScore(amount):
     global score, scoreText, createScoreText
     score += amount
     scoreText = "Score: " + str(score)
-    canvas.delete(createScoreText)
-    createScoreText = canvas.create_text(20, 20, anchor=NW, font="terminus 20 bold", text=scoreText, fill="#3a852e")
+    canvas.itemconfig(createScoreText, text=scoreText)
 
 def updateHealth(amount):
     global health, healthText, createHealthText
     health += amount
     healthText = "Health: " + str(health)
-    canvas.delete(createHealthText)
-    createHealthText = canvas.create_text(20, 70, anchor=NW, font="terminus 20 bold", text=healthText, fill="#cc272a")
+    canvas.itemconfig(createHealthText, text=healthText)
 
 def isColliding(object1, object2):
     # see if object1 is an image
@@ -242,7 +247,11 @@ isFastShooting = 0
 # asteroids
 asteroidModels = [PhotoImage(file="asteroids/asteroid1.png").subsample(3)]
 asteroidImage = asteroidModels[0]
-drawAsteroid("asteroid")
+window.after(1000, lambda: drawAsteroid("asteroid"))
+
+# explosions
+explosionModels = [PhotoImage(file="explosion.png").subsample(8)]
+explosionImage = explosionModels[0]
 
 # setup boss key
 bossKeyToggle = 0
