@@ -2,11 +2,10 @@ from tkinter import *
 from random import randint
 
 def playerControls(event):
-    global player, playerModels
+    global player, playerModels, isPaused
 
-    # ship randomizer
+    # ship randomiser / cheat code
     if event.keysym == "r":
-        s = canvas.coords(player)
         l = len(playerModels)-1
         playerImageRandom = playerModels[randint(0,l)]
         canvas.itemconfig(player, image=playerImageRandom)
@@ -108,7 +107,7 @@ def drawAlien(tag):
     global width, height, alienImage
 
     alienHeight = alienImage.height()
-    randomY = randint(alienHeight, 400)
+    randomY = randint(alienHeight, 350)
     randomX = [-100,width+100]
     randomSide = randint(0,1)
     alien = canvas.create_image(randomX[randomSide], randomY, image=alienImage, tag=tag)
@@ -139,7 +138,7 @@ def alienUpdate(name, side):
         elif isColliding(name, player) == True:
             drawExplosion(name)
             canvas.delete(name)
-            updateHealth(-10)
+            updateHealth(-15)
             drawAlien(name)
 
         # check if asteroid collides with shot
@@ -148,7 +147,7 @@ def alienUpdate(name, side):
             canvas.delete("shot")
             canvas.delete(name)
             shotAvailable = 1
-            updateScore(1)
+            updateScore(5)
             drawAlien(name)
 
         else:
@@ -262,6 +261,34 @@ def bossKey(event):
         bossKeyLabel.place_forget()
         window.title("Space Shooters")
 
+def mainMenu():
+    logo = menuCanvas.create_image(x, y-125, image=logoImage)
+    active = "#0BB93B"
+    front = "#FFFFFF"
+    back = "#3b3b3b"
+
+    startButton = Button(window, text="Start", command=startGame, anchor=CENTER)
+    startButton.configure(fg=front, bg=back, width=10, activebackground=active, relief=FLAT)
+    startButton = menuCanvas.create_window(x, y, anchor=CENTER, window=startButton)
+
+    leaderButton = Button(window, text="Leaderboard", command="", anchor=CENTER)
+    leaderButton.configure(fg=front, bg=back, width=10, activebackground=active, relief=FLAT)
+    leaderButton = menuCanvas.create_window(x, y+50, anchor=CENTER, window=leaderButton)
+
+    settingsButton = Button(window, text="Settings", command="", anchor=CENTER)
+    settingsButton.configure(fg=front, bg=back, width=10, activebackground=active, relief=FLAT)
+    settingsButton = menuCanvas.create_window(x, y+100, anchor=CENTER, window=settingsButton)
+
+    quitButton = Button(window, text="Quit", command=quit, anchor=CENTER)
+    quitButton.configure(fg=front, bg=back, width=10, activebackground=active, relief=FLAT)
+    quitButtonWindow = menuCanvas.create_window(x, y+150, anchor=CENTER, window=quitButton)
+
+    menuCanvas.pack()
+
+def startGame():
+    menuCanvas.destroy()
+    canvas.pack()
+
 def setWindowDimensions(w,h):
     window = Tk()
     window.title("Space Shooters")
@@ -280,10 +307,14 @@ x = width / 2
 y = height / 2
 window = setWindowDimensions(width, height)
 canvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
-canvas.pack()
 
+# setup main menu system
+logoImage = PhotoImage(file="logo.png")
+menuCanvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
+mainMenu()
+
+# set background image
 backgroundImage = PhotoImage(file="background.gif").zoom(2)
-backgroundLabel = Label(window, image=backgroundImage)
 background = canvas.create_image(x, y, image=backgroundImage)
 
 # create the player
