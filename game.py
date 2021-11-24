@@ -1,13 +1,12 @@
 from tkinter import *
 from random import randint
-from typing import Mapping
 
 # set the screen size/resolution here
 width = 1600
 height = 900
 
 def playerControls(event):
-    global player, playerModels, isPaused
+    global player, playerModels
 
     # ship randomiser / cheat code
     if event.keysym == "r":
@@ -453,13 +452,14 @@ def gameOver():
         gameOverCanvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
     canvas.destroy()
 
+    active = "#fcba03"
     background = gameOverCanvas.create_image(x, y, image=backgroundImage)
     gameOverCanvas.create_image(x, y-75, image=gameOverImage)
 
     nameText = "Well Done, " + name + "!"
     finalScoreText = "Your final score was: " + str(score)
-    gameOverCanvas.create_text(x, y+100, font="sans 20 bold", text=nameText, fill="#fcba03")
-    gameOverCanvas.create_text(x, y+160, font="sans 20 bold", text=finalScoreText, fill="#fcba03")
+    gameOverCanvas.create_text(x, y+100, font="sans 20 bold", text=nameText, fill=active)
+    gameOverCanvas.create_text(x, y+160, font="sans 20 bold", text=finalScoreText, fill=active)
 
     quitButton = Button(window, text="Return to Menu", command=mainMenu, anchor=CENTER)
     quitButton.configure(fg=front, bg=back, width=11, activebackground=active)
@@ -499,7 +499,7 @@ front = "#FFFFFF"
 back = "#3b3b3b"
 
 # setup game over system
-gameOverImage = PhotoImage(file="gameover.png")
+gameOverImage = PhotoImage(file="misc/gameover.png")
 gameOverCanvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
 
 # set background image
