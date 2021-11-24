@@ -158,6 +158,41 @@ def alienUpdate(name, side):
         else:
             window.after(30, alienUpdate, name, side)
 
+def drawAlienMenu(tag):
+    global width, height, alienImage
+
+    alienHeight = alienImage.height()
+    randomY = randint(alienHeight, 175)
+    randomX = [-100,width+100]
+    randomSide = randint(0,1)
+    alien = menuCanvas.create_image(randomX[randomSide], randomY, image=alienImage, tag=tag)
+
+    if randomSide == 0:
+        alienUpdateMenu(tag, "left")
+    elif randomSide == 1:
+        alienUpdateMenu(tag, "right")
+
+def alienUpdateMenu(name, side):
+    global width, shotAvailable, score, menuCanvas
+
+    if menuCanvas.winfo_exists():
+        if side == "left":
+            menuCanvas.move(name,7,0)
+        elif side == "right":
+            menuCanvas.move(name,-7,0)
+        menuCanvas.update()
+        alienCoords = menuCanvas.coords(name)
+
+    if menuCanvas.winfo_exists():
+        # check if asteroid exists on screen, then execute if true
+        if alienCoords:
+            if (alienCoords[0] > width and side == "left" or
+                alienCoords[0] < 0 and side == "right"):
+                menuCanvas.delete(name)
+                drawAlienMenu(name)
+            else:
+                window.after(30, alienUpdateMenu, name, side)
+
 def drawAsteroid(tag):
     global width, height, asteroidImage
     randomX = randint(200, width-200)
@@ -269,6 +304,10 @@ def bossKey(event):
 def selectCharacter(num):
     canvas.itemconfig(player, image=playerModels[num])
 
+def updateName(enteredName):
+    global name
+    name = enteredName
+
 def mainMenu():
     global menuCanvas, settingsCanvas, leaderCanvas, active
     if not menuCanvas.winfo_exists():
@@ -278,6 +317,8 @@ def mainMenu():
         if leaderCanvas.winfo_exists():
             leaderCanvas.destroy()
 
+    menuBackground = menuCanvas.create_image(x, y, image=menuBackgroundImage)
+    alienMenuLoop = menuCanvas.after(250, lambda: drawAlienMenu("menuAlien"))
     logo = menuCanvas.create_image(x, y-140, image=logoImage)
     active = "#0BB93B"
 
@@ -304,6 +345,7 @@ def settingsMenu():
     if not settingsCanvas.winfo_exists():
         settingsCanvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
     menuCanvas.destroy()
+    menuBackground = settingsCanvas.create_image(x, y, image=menuBackgroundImage)
     logo = settingsCanvas.create_image(x, y-250, image=settingsImage)
     active = "#DC6700"
 
@@ -314,12 +356,22 @@ def settingsMenu():
 
     r2 = Radiobutton(window, image=playerModels[1])
     r2.configure(fg=front, bg=back, width=15, activebackground=active,
-                 command=lambda: selectCharacter(1), padx=10, pady=10)
+                 command=lambda: selectCharacter(1))
     r2Window = settingsCanvas.create_window(x+200, y, anchor=CENTER, window=r2)
+
+    r3 = Radiobutton(window, image=playerModels[2])
+    r3.configure(fg=front, bg=back, width=15, activebackground=active,
+                 command=lambda: selectCharacter(2))
+    r3Window = settingsCanvas.create_window(x-200, y, anchor=CENTER, window=r3)
+
+    nameText = settingsCanvas.create_text(x, y+110,text="Enter your name:", fill="white")
+    nameEntry = Entry(window)
+    nameEntry.configure(fg=front, bg=back, width=15)
+    nameEntryWindow = settingsCanvas.create_window(x, y+140, anchor=CENTER, window=nameEntry)
 
     quitButton = Button(window, text="Return to Menu", command=mainMenu, anchor=CENTER)
     quitButton.configure(fg=front, bg=back, width=11, activebackground=active)
-    quitButtonWindow = settingsCanvas.create_window(x, y+150, anchor=CENTER, window=quitButton)
+    quitButtonWindow = settingsCanvas.create_window(x, y+210, anchor=CENTER, window=quitButton)
 
     settingsCanvas.pack()
 
@@ -328,6 +380,7 @@ def leaderMenu():
     if not leaderCanvas.winfo_exists():
         leaderCanvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
     menuCanvas.destroy()
+    menuBackground = leaderCanvas.create_image(x, y, image=menuBackgroundImage)
     leader = leaderCanvas.create_image(x, y-250, image=leaderImage)
     active = "#0B93C6"
 
@@ -362,19 +415,19 @@ window = setWindowDimensions(width, height)
 canvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
 
 # setup main menu system
-logoImage = PhotoImage(file="logo.png")
-settingsImage = PhotoImage(file="settings.png")
-leaderImage = PhotoImage(file="leader.png")
+logoImage = PhotoImage(file="misc/logo.png")
+settingsImage = PhotoImage(file="misc/settings.png")
+leaderImage = PhotoImage(file="misc/leader.png")
+menuBackgroundImage = PhotoImage(file="misc/menuback.png")
 menuCanvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
 settingsCanvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
 leaderCanvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
 active = "#0BB93B"
 front = "#FFFFFF"
 back = "#3b3b3b"
-mainMenu()
 
 # set background image
-backgroundImage = PhotoImage(file="background.gif").zoom(2)
+backgroundImage = PhotoImage(file="misc/background.gif").zoom(2)
 background = canvas.create_image(x, y, image=backgroundImage)
 
 # create the player
@@ -383,6 +436,7 @@ playerModels = [PhotoImage(file="ships/ship1.png").subsample(5),
                 PhotoImage(file="ships/ship3.png").subsample(7)]
 playerImage = playerModels[0]
 player = canvas.create_image(x, height-100, image=playerImage)
+name = ""
 
 shotAvailable = 1 # set shotAvailable to 1 at beginning of game
 defaultPlayerSpeed = 20
@@ -403,7 +457,7 @@ asteroidModels = [PhotoImage(file="asteroids/asteroid1.png").subsample(3)]
 asteroidImage = asteroidModels[0]
 
 # explosions
-explosionModels = [PhotoImage(file="explosion.png").subsample(8)]
+explosionModels = [PhotoImage(file="misc/explosion.png").subsample(8)]
 explosionImage = explosionModels[0]
 
 # setup boss key
@@ -434,5 +488,7 @@ window.bind("<Key>", playerControls)
 window.bind("<Control-b>", bossKey)
 window.bind("<Control-f>", fastShooting) # cheat code
 window.bind("<Control-s>", fastSpeed) # cheat code
+
+mainMenu()
 
 window.mainloop()
