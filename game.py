@@ -108,9 +108,10 @@ def playerShootUpdate(name):
     if shotAvailable == 0:
         window.after(10, playerShootUpdate, name)
 
-def drawAlien(tag):
+def drawAlien(tag, model):
     global width, height, alienImage
 
+    alienImage = alienModels[model]
     alienHeight = alienImage.height()
     randomY = randint(alienHeight, 350)
     randomX = [-100,width+100]
@@ -118,12 +119,15 @@ def drawAlien(tag):
     alien = canvas.create_image(randomX[randomSide], randomY, image=alienImage, tag=tag)
 
     if randomSide == 0:
-        alienUpdate(tag, "left")
+        alienUpdate(tag, "left", model)
     elif randomSide == 1:
-        alienUpdate(tag, "right")
+        alienUpdate(tag, "right", model)
 
-def alienUpdate(name, side):
+def alienUpdate(name, side, model):
     global width, shotAvailable, score
+
+    if health <= 0:
+        gameOver()
 
     if side == "left":
         canvas.move(name,7,0)
@@ -137,14 +141,14 @@ def alienUpdate(name, side):
         if (alienCoords[0] > width and side == "left" or
             alienCoords[0] < 0 and side == "right"):
             canvas.delete(name)
-            drawAlien(name)
+            drawAlien(name, model)
 
         # check if asteroid collides with player
         elif isColliding(name, player) == True:
             drawExplosion(name)
             canvas.delete(name)
             updateHealth(-15)
-            drawAlien(name)
+            drawAlien(name, model)
 
         # check if asteroid collides with shot
         elif isColliding(name, "shot") == True:
@@ -153,10 +157,10 @@ def alienUpdate(name, side):
             canvas.delete(name)
             shotAvailable = 1
             updateScore(5)
-            drawAlien(name)
+            drawAlien(name, model)
 
         else:
-            window.after(30, alienUpdate, name, side)
+            window.after(30, alienUpdate, name, side, model)
 
 def drawAlienMenu(tag):
     global width, height, alienImage
@@ -198,7 +202,7 @@ def alienUpdateMenu(name, side):
 def drawAsteroid(tag):
     global width, height, asteroidImage
     randomX = randint(200, width-200)
-    asteroid = canvas.create_image(randomX, -50, image=asteroidImage, tag=tag)
+    asteroid = canvas.create_image(randomX, -200, image=asteroidImage, tag=tag)
     asteroidUpdate(tag)
 
 def asteroidUpdate(name):
@@ -311,13 +315,15 @@ def updateName(enteredName):
     name = enteredName
 
 def mainMenu():
-    global menuCanvas, settingsCanvas, leaderCanvas, active
+    global menuCanvas, active
     if not menuCanvas.winfo_exists():
         menuCanvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
         if settingsCanvas.winfo_exists():
             settingsCanvas.destroy()
         if leaderCanvas.winfo_exists():
             leaderCanvas.destroy()
+        if gameOverCanvas.winfo_exists():
+            gameOverCanvas.destroy()
 
     menuBackground = menuCanvas.create_image(x, y, image=menuBackgroundImage)
     alienMenuLoop = menuCanvas.after(250, lambda: drawAlienMenu("menuAlien"))
@@ -354,8 +360,8 @@ def settingsMenu():
     playerText = settingsCanvas.create_text(x, y-90,text="Choose a Ship:", fill="white")
 
     r1 = Radiobutton(window, image=playerModels[0])
-    r1.configure(fg=front, bg=back, width=15, activebackground=active,
-                 command=lambda: selectCharacter(0))
+    r1.configure(fg=front, bg=back, activebackground=active,
+                 command=lambda: selectCharacter(0), indicatoron = 0)
     r1Window = settingsCanvas.create_window(x, y, anchor=CENTER, window=r1)
 
     r2 = Radiobutton(window, image=playerModels[1])
@@ -402,10 +408,65 @@ def leaderMenu():
     leaderCanvas.pack()
 
 def startGame():
+    global canvas, health, score, shotAvailable
+
+    # if game canvas (from before) does not exist re-instantiate everything
+    if not canvas.winfo_exists():
+        canvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
+        # health = 100
+        # score = 0
+        # shotAvailable = 1
+        # healthText = "Health: " + str(health)
+        # scoreText = "Score: " + str(score)
+
+        # background = canvas.create_image(x, y, image=backgroundImage)
+        # player = canvas.create_image(x, height-100, image=playerImage)
+        # createScoreText = canvas.create_text(20, 20, anchor=NW, font="sans 20 bold", text=scoreText, fill="#3a852e")
+        # createHealthText = canvas.create_text(20, 70, anchor=NW, font="sans 20 bold", text=healthText, fill="#cc272a")
+
     menuCanvas.destroy()
+
+    # create objects inside game canvas
     canvas.pack()
-    window.after(1000, lambda: drawAlien("alien"))
-    window.after(1000, lambda: drawAsteroid("asteroid"))
+    window.after(1000, lambda: drawAlien("alien1", 0))
+    window.after(2000, lambda: drawAlien("alien2", 1))
+    window.after(500, lambda: drawAsteroid("asteroid1"))
+    window.after(1500, lambda: drawAsteroid("asteroid2"))
+
+def instantiateGame():
+    global health, score, shotAvailable, canvas
+    canvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
+    health = defaultHealth
+    score = defaultScore
+    shotAvailable = 1
+    healthText = "Health: " + str(health)
+    scoreText = "Score: " + str(score)
+
+    background = canvas.create_image(x, y, image=backgroundImage)
+    player = canvas.create_image(x, height-100, image=playerImage)
+    createScoreText = canvas.create_text(20, 20, anchor=NW, font="sans 20 bold", text=scoreText, fill="#3a852e")
+    createHealthText = canvas.create_text(20, 70, anchor=NW, font="sans 20 bold", text=healthText, fill="#cc272a")
+
+def gameOver():
+    global gameOverCanvas, active
+    if not gameOverCanvas.winfo_exists():
+        gameOverCanvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
+    canvas.destroy()
+
+    background = gameOverCanvas.create_image(x, y, image=backgroundImage)
+    gameOverCanvas.create_image(x, y-75, image=gameOverImage)
+
+    nameText = "Well Done, " + name + "!"
+    finalScoreText = "Your final score was: " + str(score)
+    gameOverCanvas.create_text(x, y+100, font="sans 20 bold", text=nameText, fill="#fcba03")
+    gameOverCanvas.create_text(x, y+160, font="sans 20 bold", text=finalScoreText, fill="#fcba03")
+
+    quitButton = Button(window, text="Return to Menu", command=mainMenu, anchor=CENTER)
+    quitButton.configure(fg=front, bg=back, width=11, activebackground=active)
+    quitButtonWindow = gameOverCanvas.create_window(x, y+240, anchor=CENTER, window=quitButton)
+
+    instantiateGame()
+    gameOverCanvas.pack()
 
 def setWindowDimensions(w,h):
     window = Tk()
@@ -428,12 +489,18 @@ logoImage = PhotoImage(file="misc/logo.png")
 settingsImage = PhotoImage(file="misc/settings.png")
 leaderImage = PhotoImage(file="misc/leader.png")
 menuBackgroundImage = PhotoImage(file="misc/menuback.png")
+
 menuCanvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
 settingsCanvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
 leaderCanvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
+
 active = "#0BB93B"
 front = "#FFFFFF"
 back = "#3b3b3b"
+
+# setup game over system
+gameOverImage = PhotoImage(file="gameover.png")
+gameOverCanvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
 
 # set background image
 backgroundImage = PhotoImage(file="misc/background.gif").zoom(2)
@@ -445,7 +512,7 @@ playerModels = [PhotoImage(file="ships/ship1.png").subsample(5),
                 PhotoImage(file="ships/ship3.png").subsample(7)]
 playerImage = playerModels[0]
 player = canvas.create_image(x, height-100, image=playerImage)
-name = ""
+name = "player"
 
 shotAvailable = 1 # set shotAvailable to 1 at beginning of game
 defaultPlayerSpeed = 20
@@ -458,7 +525,7 @@ isFastShooting = 0
 
 # aliens
 alienModels = [PhotoImage(file="aliens/alien1.png").subsample(9),
-               PhotoImage(file="aliens/alien1.gif").subsample(9)]
+               PhotoImage(file="aliens/alien2.png").subsample(7)]
 alienImage = alienModels[0]
 
 # asteroids
@@ -475,14 +542,16 @@ bossKeyImage = PhotoImage(file="misc/bosskey.png")
 bossKeyLabel = Label(canvas, image=bossKeyImage, height=height, width=width)
 
 # set score
-score = 0
+defaultScore = 0
+score = defaultScore
 scoreText = "Score: " + str(score)
-createScoreText = canvas.create_text(20, 20, anchor=NW, font="terminus 20 bold", text=scoreText, fill="#3a852e")
+createScoreText = canvas.create_text(20, 20, anchor=NW, font="sans 20 bold", text=scoreText, fill="#3a852e")
 
 # set health
-health = 100
+defaultHealth = 10
+health = defaultHealth
 healthText = "Health: " + str(health)
-createHealthText = canvas.create_text(20, 70, anchor=NW, font="terminus 20 bold", text=healthText, fill="#cc272a")
+createHealthText = canvas.create_text(20, 70, anchor=NW, font="sans 20 bold", text=healthText, fill="#cc272a")
 
 # setup keybindings
 moveStatus = {}
