@@ -181,7 +181,9 @@ def alienUpdateMenu(name, side):
         elif side == "right":
             menuCanvas.move(name,-7,0)
         menuCanvas.update()
-        alienCoords = menuCanvas.coords(name)
+
+        if menuCanvas.coords(name):
+            alienCoords = menuCanvas.coords(name)
 
     if menuCanvas.winfo_exists():
         # check if asteroid exists on screen, then execute if true
@@ -349,6 +351,8 @@ def settingsMenu():
     logo = settingsCanvas.create_image(x, y-250, image=settingsImage)
     active = "#DC6700"
 
+    playerText = settingsCanvas.create_text(x, y-90,text="Choose a Ship:", fill="white")
+
     r1 = Radiobutton(window, image=playerModels[0])
     r1.configure(fg=front, bg=back, width=15, activebackground=active,
                  command=lambda: selectCharacter(0))
@@ -364,14 +368,19 @@ def settingsMenu():
                  command=lambda: selectCharacter(2))
     r3Window = settingsCanvas.create_window(x-200, y, anchor=CENTER, window=r3)
 
-    nameText = settingsCanvas.create_text(x, y+110,text="Enter your name:", fill="white")
+    nameText = settingsCanvas.create_text(x, y+110,text="Your Name:", fill="white")
     nameEntry = Entry(window)
     nameEntry.configure(fg=front, bg=back, width=15)
     nameEntryWindow = settingsCanvas.create_window(x, y+140, anchor=CENTER, window=nameEntry)
 
+    nameButton = Button(window, text="Submit", anchor=CENTER)
+    nameButton.configure(fg=front, bg=back, width=5, activebackground=active,
+                         command=lambda: updateName(nameEntry.get()))
+    nameButtonWindow = settingsCanvas.create_window(x, y+180, anchor=CENTER, window=nameButton)
+    
     quitButton = Button(window, text="Return to Menu", command=mainMenu, anchor=CENTER)
     quitButton.configure(fg=front, bg=back, width=11, activebackground=active)
-    quitButtonWindow = settingsCanvas.create_window(x, y+210, anchor=CENTER, window=quitButton)
+    quitButtonWindow = settingsCanvas.create_window(x, y+240, anchor=CENTER, window=quitButton)
 
     settingsCanvas.pack()
 
