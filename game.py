@@ -1,5 +1,10 @@
 from tkinter import *
 from random import randint
+from typing import Mapping
+
+# set the screen size/resolution here
+width = 1600
+height = 900
 
 def playerControls(event):
     global player, playerModels, isPaused
@@ -261,33 +266,84 @@ def bossKey(event):
         bossKeyLabel.place_forget()
         window.title("Space Shooters")
 
+def selectCharacter(num):
+    canvas.itemconfig(player, image=playerModels[num])
+
 def mainMenu():
-    logo = menuCanvas.create_image(x, y-125, image=logoImage)
+    global menuCanvas, settingsCanvas, leaderCanvas, active
+    if not menuCanvas.winfo_exists():
+        menuCanvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
+        if settingsCanvas.winfo_exists():
+            settingsCanvas.destroy()
+        if leaderCanvas.winfo_exists():
+            leaderCanvas.destroy()
+
+    logo = menuCanvas.create_image(x, y-140, image=logoImage)
     active = "#0BB93B"
-    front = "#FFFFFF"
-    back = "#3b3b3b"
 
     startButton = Button(window, text="Start", command=startGame, anchor=CENTER)
-    startButton.configure(fg=front, bg=back, width=10, activebackground=active, relief=FLAT)
-    startButton = menuCanvas.create_window(x, y, anchor=CENTER, window=startButton)
+    startButton.configure(fg=front, bg=back, width=10, activebackground=active)
+    startButtonWindow = menuCanvas.create_window(x, y, anchor=CENTER, window=startButton)
 
-    leaderButton = Button(window, text="Leaderboard", command="", anchor=CENTER)
-    leaderButton.configure(fg=front, bg=back, width=10, activebackground=active, relief=FLAT)
-    leaderButton = menuCanvas.create_window(x, y+50, anchor=CENTER, window=leaderButton)
+    leaderButton = Button(window, text="Leaderboard", command=leaderMenu, anchor=CENTER)
+    leaderButton.configure(fg=front, bg=back, width=10, activebackground=active)
+    leaderButtonWindow = menuCanvas.create_window(x, y+50, anchor=CENTER, window=leaderButton)
 
-    settingsButton = Button(window, text="Settings", command="", anchor=CENTER)
-    settingsButton.configure(fg=front, bg=back, width=10, activebackground=active, relief=FLAT)
-    settingsButton = menuCanvas.create_window(x, y+100, anchor=CENTER, window=settingsButton)
+    settingsButton = Button(window, text="Settings", command=settingsMenu, anchor=CENTER)
+    settingsButton.configure(fg=front, bg=back, width=10, activebackground=active)
+    settingsButtonWindow = menuCanvas.create_window(x, y+100, anchor=CENTER, window=settingsButton)
 
     quitButton = Button(window, text="Quit", command=quit, anchor=CENTER)
-    quitButton.configure(fg=front, bg=back, width=10, activebackground=active, relief=FLAT)
+    quitButton.configure(fg=front, bg=back, width=10, activebackground=active)
     quitButtonWindow = menuCanvas.create_window(x, y+150, anchor=CENTER, window=quitButton)
 
     menuCanvas.pack()
 
+def settingsMenu():
+    global settingsCanvas, active
+    if not settingsCanvas.winfo_exists():
+        settingsCanvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
+    menuCanvas.destroy()
+    logo = settingsCanvas.create_image(x, y-250, image=settingsImage)
+    active = "#DC6700"
+
+    r1 = Radiobutton(window, image=playerModels[0])
+    r1.configure(fg=front, bg=back, width=15, activebackground=active,
+                 command=lambda: selectCharacter(0))
+    r1Window = settingsCanvas.create_window(x, y, anchor=CENTER, window=r1)
+
+    r2 = Radiobutton(window, image=playerModels[1])
+    r2.configure(fg=front, bg=back, width=15, activebackground=active,
+                 command=lambda: selectCharacter(1), padx=10, pady=10)
+    r2Window = settingsCanvas.create_window(x+200, y, anchor=CENTER, window=r2)
+
+    quitButton = Button(window, text="Return to Menu", command=mainMenu, anchor=CENTER)
+    quitButton.configure(fg=front, bg=back, width=11, activebackground=active)
+    quitButtonWindow = settingsCanvas.create_window(x, y+150, anchor=CENTER, window=quitButton)
+
+    settingsCanvas.pack()
+
+def leaderMenu():
+    global leaderCanvas, active
+    if not leaderCanvas.winfo_exists():
+        leaderCanvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
+    menuCanvas.destroy()
+    leader = leaderCanvas.create_image(x, y-250, image=leaderImage)
+    active = "#0B93C6"
+
+    leaderCanvas.create_text(x, y, text="1. Eesa - 200")
+
+    quitButton = Button(window, text="Return to Menu", command=mainMenu, anchor=CENTER)
+    quitButton.configure(fg=front, bg=back, width=11, activebackground=active)
+    quitButtonWindow = leaderCanvas.create_window(x, y+200, anchor=CENTER, window=quitButton)
+
+    leaderCanvas.pack()
+
 def startGame():
     menuCanvas.destroy()
     canvas.pack()
+    window.after(1000, lambda: drawAlien("alien"))
+    window.after(1000, lambda: drawAsteroid("asteroid"))
 
 def setWindowDimensions(w,h):
     window = Tk()
@@ -299,10 +355,7 @@ def setWindowDimensions(w,h):
     window.geometry('%dx%d+%d+%d' % (w, h, x, y)) # sets window size
     return window
 
-# set the screen size/resolution here
-width = 1600
-height = 900
-
+# setup game canvas
 x = width / 2
 y = height / 2
 window = setWindowDimensions(width, height)
@@ -310,7 +363,14 @@ canvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthick
 
 # setup main menu system
 logoImage = PhotoImage(file="logo.png")
+settingsImage = PhotoImage(file="settings.png")
+leaderImage = PhotoImage(file="leader.png")
 menuCanvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
+settingsCanvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
+leaderCanvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
+active = "#0BB93B"
+front = "#FFFFFF"
+back = "#3b3b3b"
 mainMenu()
 
 # set background image
@@ -337,12 +397,10 @@ isFastShooting = 0
 alienModels = [PhotoImage(file="aliens/alien1.png").subsample(9),
                PhotoImage(file="aliens/alien1.gif").subsample(9)]
 alienImage = alienModels[0]
-drawAlien("alien")
 
 # asteroids
 asteroidModels = [PhotoImage(file="asteroids/asteroid1.png").subsample(3)]
 asteroidImage = asteroidModels[0]
-window.after(1000, lambda: drawAsteroid("asteroid"))
 
 # explosions
 explosionModels = [PhotoImage(file="explosion.png").subsample(8)]
