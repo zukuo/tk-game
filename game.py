@@ -407,22 +407,11 @@ def leaderMenu():
     leaderCanvas.pack()
 
 def startGame():
-    global canvas, health, score, shotAvailable
+    global canvas
 
     # if game canvas (from before) does not exist re-instantiate everything
     if not canvas.winfo_exists():
         canvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
-        # health = 100
-        # score = 0
-        # shotAvailable = 1
-        # healthText = "Health: " + str(health)
-        # scoreText = "Score: " + str(score)
-
-        # background = canvas.create_image(x, y, image=backgroundImage)
-        # player = canvas.create_image(x, height-100, image=playerImage)
-        # createScoreText = canvas.create_text(20, 20, anchor=NW, font="sans 20 bold", text=scoreText, fill="#3a852e")
-        # createHealthText = canvas.create_text(20, 70, anchor=NW, font="sans 20 bold", text=healthText, fill="#cc272a")
-
     menuCanvas.destroy()
 
     # create objects inside game canvas
