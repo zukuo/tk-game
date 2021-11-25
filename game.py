@@ -1,5 +1,6 @@
 from tkinter import *
 from random import randint
+import json
 
 # set the screen size/resolution here
 width = 1600
@@ -15,8 +16,12 @@ def playerControls(event):
         canvas.itemconfig(player, image=playerImageRandom)
 
     # shoot when space is pressed
-    if event.keysym == "space":
+    if event.keysym == "space" and isPaused == 0:
         playerShoot(event)
+
+    # pause game on escape
+    if event.keysym == "Escape":
+        pauseGame()
 
 def generateMoveStatus():
     # create a dictionary of binds
@@ -55,15 +60,16 @@ def moveKeyPressed(event):
     if event.keysym in downBinds:
         moveStatus[downBinds] = True
 
-    # if bind is set to true then move player
-    if moveStatus[leftBinds] == True and p[0] > pWidth:
-        canvas.move(player, -playerSpeed, 0)
-    if moveStatus[rightBinds] == True and p[0] < width-pWidth:
-        canvas.move(player, playerSpeed, 0)
-    if moveStatus[upBinds] == True and p[1] > pHeight:
-        canvas.move(player, 0, -playerSpeed)
-    if moveStatus[downBinds] == True and p[1] < height-pHeight:
-        canvas.move(player, 0, playerSpeed)
+    if isPaused == 0:
+        # if bind is set to true then move player
+        if moveStatus[leftBinds] == True and p[0] > pWidth:
+            canvas.move(player, -playerSpeed, 0)
+        if moveStatus[rightBinds] == True and p[0] < width-pWidth:
+            canvas.move(player, playerSpeed, 0)
+        if moveStatus[upBinds] == True and p[1] > pHeight:
+            canvas.move(player, 0, -playerSpeed)
+        if moveStatus[downBinds] == True and p[1] < height-pHeight:
+            canvas.move(player, 0, playerSpeed)
 
 def moveKeyReleased(event):
     # set bind false if released
@@ -92,8 +98,9 @@ def playerShoot(event):
 def playerShootUpdate(name):
     global shotAvailable
 
-    canvas.move(name,0,-playerShootSpeed)
-    canvas.update()
+    if isPaused == 0:
+        canvas.move(name,0,-playerShootSpeed)
+        canvas.update()
         
     if shotAvailable == 0:
         shot = canvas.coords(name)
@@ -125,15 +132,14 @@ def drawAlien(tag, model):
 def alienUpdate(name, side, model):
     global width, shotAvailable, score
 
-    if health <= 0:
-        gameOver()
-
-    if side == "left":
-        canvas.move(name,7,0)
-    elif side == "right":
-        canvas.move(name,-7,0)
-    canvas.update()
     alienCoords = canvas.coords(name)
+
+    if isPaused == 0:
+        if side == "left":
+            canvas.move(name,7,0)
+        elif side == "right":
+            canvas.move(name,-7,0)
+        canvas.update()
 
     # check if asteroid exists on screen, then execute if true
     if alienCoords:
@@ -159,7 +165,10 @@ def alienUpdate(name, side, model):
             drawAlien(name, model)
 
         else:
-            window.after(30, alienUpdate, name, side, model)
+            alienLoop = window.after(30, alienUpdate, name, side, model)
+    
+    if isPaused == 0:
+        checkHealth()
 
 def drawAlienMenu(tag):
     global width, height, alienImage
@@ -207,9 +216,11 @@ def drawAsteroid(tag):
 def asteroidUpdate(name):
     global height, shotAvailable, score
 
-    canvas.move(name,0,7)
-    canvas.update()
     asteroidCoords = canvas.coords(name)
+
+    if isPaused == 0:
+        canvas.move(name,0,7)
+        canvas.update()
 
     # check if asteroid exists on screen, then execute if true
     if asteroidCoords:
@@ -234,7 +245,10 @@ def asteroidUpdate(name):
             drawAsteroid(name)
 
         else:
-            window.after(30, asteroidUpdate, name)
+            asteroidLoop = window.after(30, asteroidUpdate, name)
+
+    if isPaused == 0:
+        checkHealth()
 
 def drawExplosion(object):
     global explosionImage
@@ -254,6 +268,11 @@ def updateHealth(amount):
     healthText = "Health: " + str(health)
     canvas.itemconfig(createHealthText, text=healthText)
 
+def checkHealth():
+    global health
+    if health <= 0:
+        gameOver()
+
 def isColliding(object1, object2):
     # see if object1 is an image
     if canvas.bbox(object1):
@@ -267,8 +286,9 @@ def isColliding(object1, object2):
     else:
         b = object2
 
-    x1, y1, x2, y2 = canvas.coords(a)
-    result = canvas.find_overlapping(x1, y1, x2, y2)
+    if canvas.coords(a):
+        x1, y1, x2, y2 = canvas.coords(a)
+        result = canvas.find_overlapping(x1, y1, x2, y2)
 
     if b in result:
         return True
@@ -293,21 +313,10 @@ def fastSpeed(event):
     elif isFastSpeed == 0:
         playerSpeed = defaultPlayerSpeed
 
-def bossKey(event):
-    global bossKeyToggle, bossKeyLabel, window
-    bossKeyToggle ^= 1 # alternate toggle between 1 and 0
-
-    if bossKeyToggle == 1:
-        bossKeyLabel.image = bossKeyImage
-        bossKeyLabel.place(relx=0.5, rely=0.5, anchor="center")
-        window.title("Microsoft Excel - Employees.xlsx")
-
-    elif bossKeyToggle == 0:
-        bossKeyLabel.place_forget()
-        window.title("Space Shooters")
-
 def selectCharacter(num):
-    canvas.itemconfig(player, image=playerModels[num])
+    global playerImage
+    playerImage = playerModels[num]
+    canvas.itemconfig(player, image=playerImage)
 
 def updateName(enteredName):
     global name
@@ -323,6 +332,8 @@ def mainMenu():
             leaderCanvas.destroy()
         if gameOverCanvas.winfo_exists():
             gameOverCanvas.destroy()
+        if timeUpCanvas.winfo_exists():
+            timeUpCanvas.destroy()
 
     menuBackground = menuCanvas.create_image(x, y, image=menuBackgroundImage)
     alienMenuLoop = menuCanvas.after(250, lambda: drawAlienMenu("menuAlien"))
@@ -356,22 +367,24 @@ def settingsMenu():
     logo = settingsCanvas.create_image(x, y-250, image=settingsImage)
     active = "#DC6700"
 
+    difficultyText = settingsCanvas.create_text(x, y-150,text="Choose a Difficulty:", fill="white")
+
     playerText = settingsCanvas.create_text(x, y-90,text="Choose a Ship:", fill="white")
 
-    r1 = Radiobutton(window, image=playerModels[0])
-    r1.configure(fg=front, bg=back, activebackground=active,
+    r1 = Radiobutton(window, image=playerModels[0], value=0)
+    r1.configure(fg=front, bg=back, activebackground=active, selectcolor=active,
                  command=lambda: selectCharacter(0), indicatoron = 0)
     r1Window = settingsCanvas.create_window(x, y, anchor=CENTER, window=r1)
 
-    r2 = Radiobutton(window, image=playerModels[1])
-    r2.configure(fg=front, bg=back, width=15, activebackground=active,
-                 command=lambda: selectCharacter(1))
-    r2Window = settingsCanvas.create_window(x+200, y, anchor=CENTER, window=r2)
+    r2 = Radiobutton(window, image=playerModels[1], value=1)
+    r2.configure(fg=front, bg=back, activebackground=active, selectcolor=active,
+                 command=lambda: selectCharacter(1), indicatoron = 0)
+    r2Window = settingsCanvas.create_window(x+150, y, anchor=CENTER, window=r2)
 
-    r3 = Radiobutton(window, image=playerModels[2])
-    r3.configure(fg=front, bg=back, width=15, activebackground=active,
-                 command=lambda: selectCharacter(2))
-    r3Window = settingsCanvas.create_window(x-200, y, anchor=CENTER, window=r3)
+    r3 = Radiobutton(window, image=playerModels[2], value=2)
+    r3.configure(fg=front, bg=back, activebackground=active, selectcolor=active,
+                 command=lambda: selectCharacter(2), indicatoron = 0)
+    r3Window = settingsCanvas.create_window(x-150, y, anchor=CENTER, window=r3)
 
     nameText = settingsCanvas.create_text(x, y+110,text="Your Name:", fill="white")
     nameEntry = Entry(window)
@@ -397,12 +410,11 @@ def leaderMenu():
     menuBackground = leaderCanvas.create_image(x, y, image=menuBackgroundImage)
     leader = leaderCanvas.create_image(x, y-250, image=leaderImage)
     active = "#0B93C6"
-
-    leaderCanvas.create_text(x, y, text="1. Eesa - 200")
+    createLeader()
 
     quitButton = Button(window, text="Return to Menu", command=mainMenu, anchor=CENTER)
     quitButton.configure(fg=front, bg=back, width=11, activebackground=active)
-    quitButtonWindow = leaderCanvas.create_window(x, y+200, anchor=CENTER, window=quitButton)
+    quitButtonWindow = leaderCanvas.create_window(x, y+250, anchor=CENTER, window=quitButton)
 
     leaderCanvas.pack()
 
@@ -416,17 +428,19 @@ def startGame():
 
     # create objects inside game canvas
     canvas.pack()
+    gameTimer()
     window.after(1000, lambda: drawAlien("alien1", 0))
     window.after(2000, lambda: drawAlien("alien2", 1))
     window.after(500, lambda: drawAsteroid("asteroid1"))
     window.after(1500, lambda: drawAsteroid("asteroid2"))
 
 def instantiateGame():
-    global health, score, shotAvailable, canvas
+    global health, score, shotAvailable, canvas, isPaused
     canvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
     health = defaultHealth
     score = defaultScore
     shotAvailable = 1
+    isPaused = 0
     healthText = "Health: " + str(health)
     scoreText = "Score: " + str(score)
 
@@ -439,23 +453,128 @@ def gameOver():
     global gameOverCanvas, active
     if not gameOverCanvas.winfo_exists():
         gameOverCanvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
-    canvas.destroy()
+    if gameOverCanvas.winfo_exists():
+        canvas.destroy()
 
-    active = "#fcba03"
+    active = "#D22929"
     background = gameOverCanvas.create_image(x, y, image=backgroundImage)
-    gameOverCanvas.create_image(x, y-75, image=gameOverImage)
+    gameOverCanvas.create_image(x, y-100, image=gameOverImage)
 
-    nameText = "Well Done, " + name + "!"
+    nameText = "You Died, Nice Try!"
     finalScoreText = "Your final score was: " + str(score)
-    gameOverCanvas.create_text(x, y+100, font="sans 20 bold", text=nameText, fill=active)
-    gameOverCanvas.create_text(x, y+160, font="sans 20 bold", text=finalScoreText, fill=active)
+    gameOverCanvas.create_text(x, y+50, font="sans 20 bold", text=nameText, fill=active)
+    gameOverCanvas.create_text(x, y+100, font="sans 20 bold", text=finalScoreText, fill=active)
+
+    nameText = gameOverCanvas.create_text(x, y+150,text="Your Name:", fill="white")
+    nameEntry = Entry(window)
+    nameEntry.configure(fg=front, bg=back, width=15)
+    nameEntryWindow = gameOverCanvas.create_window(x, y+180, anchor=CENTER, window=nameEntry)
+
+    updatedScore = score
+    nameButton = Button(window, text="Submit", anchor=CENTER)
+    nameButton.configure(fg=front, bg=back, width=5, activebackground=active,
+                         command=lambda: updateScoreData(nameEntry.get(), updatedScore))
+    nameButtonWindow = gameOverCanvas.create_window(x, y+220, anchor=CENTER, window=nameButton)
 
     quitButton = Button(window, text="Return to Menu", command=mainMenu, anchor=CENTER)
     quitButton.configure(fg=front, bg=back, width=11, activebackground=active)
-    quitButtonWindow = gameOverCanvas.create_window(x, y+240, anchor=CENTER, window=quitButton)
+    quitButtonWindow = gameOverCanvas.create_window(x, y+280, anchor=CENTER, window=quitButton)
 
     instantiateGame()
     gameOverCanvas.pack()
+
+def pauseGame():
+    global isPaused, pause
+    if bossKeyToggle == 0:
+        isPaused ^= 1
+        if isPaused == 1:
+            pause = canvas.create_image(x, y, image=pauseImage)
+        if isPaused == 0:
+            canvas.delete(pause)
+
+def timeUp():
+    global timeUpCanvas, active
+    if not timeUpCanvas.winfo_exists():
+        timeUpCanvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
+    if timeUpCanvas.winfo_exists():
+        canvas.destroy()
+
+    active = "#FF5200"
+    background = timeUpCanvas.create_image(x, y, image=backgroundImage)
+    timeUpCanvas.create_image(x, y-100, image=timeUpImage)
+
+    nameText = "Well Done!"
+    finalScoreText = "Your final score was: " + str(score)
+    timeUpCanvas.create_text(x, y+50, font="sans 20 bold", text=nameText, fill=active)
+    timeUpCanvas.create_text(x, y+100, font="sans 20 bold", text=finalScoreText, fill=active)
+
+    nameText = timeUpCanvas.create_text(x, y+150,text="Your Name:", fill="white")
+    nameEntry = Entry(window)
+    nameEntry.configure(fg=front, bg=back, width=15)
+    nameEntryWindow = timeUpCanvas.create_window(x, y+180, anchor=CENTER, window=nameEntry)
+
+    updatedScore = score
+    nameButton = Button(window, text="Submit", anchor=CENTER)
+    nameButton.configure(fg=front, bg=back, width=5, activebackground=active,
+                         command=lambda: updateScoreData(nameEntry.get(), updatedScore))
+    nameButtonWindow = timeUpCanvas.create_window(x, y+220, anchor=CENTER, window=nameButton)
+
+    quitButton = Button(window, text="Return to Menu", command=mainMenu, anchor=CENTER)
+    quitButton.configure(fg=front, bg=back, width=11, activebackground=active)
+    quitButtonWindow = timeUpCanvas.create_window(x, y+280, anchor=CENTER, window=quitButton)
+
+    instantiateGame()
+    timeUpCanvas.pack()
+
+def gameTimer():
+    global timer, createTimerText
+    timer = defaultTime
+    createTimerText = canvas.create_text(x, 60, font="sans 20 bold", text=timer, fill="white")
+    updateTimer()
+
+def updateTimer():
+    global timer, timerCoords
+    timerCoords = canvas.coords(createTimerText)
+    if timerCoords:
+        if isPaused == 0:
+            canvas.itemconfig(createTimerText, text=timer)
+            timer -= 1
+        timerLoop = window.after(1000, updateTimer)
+
+    # using -2 to prevent visual bug, due to after delay
+    if timer <= -2 and isPaused == 0 and timerCoords:
+        timeUp()
+
+def updateScoreData(playerName, newScore):
+    scores[playerName.title()] = newScore
+    with open(scoreFile, 'w+') as f:
+        json.dump(scores, f, sort_keys=True, indent=2)
+
+def createLeader():
+    scoresSorted = sorted([(player, score) for player, score in scores.items()], reverse=True, key=lambda x: x[1])
+    i = 1
+    j = -160
+    for p, s in scoresSorted:
+        if i > 10: # only show top 10
+            break
+        leaderText = str(i) + ". " + p + " - " + str(s)
+        leaderCanvas.create_text(x, y+j, text=leaderText, font="sans 15 bold", fill="white")
+        j += 40
+        i += 1
+
+def bossKey(event):
+    global bossKeyToggle, bossKeyLabel, window, isPaused
+    bossKeyToggle ^= 1 # alternate toggle between 1 and 0
+    isPaused ^= 1
+
+    if bossKeyToggle == 1:
+        bossKeyLabel.image = bossKeyImage
+        bossKeyLabel.place(relx=0.5, rely=0.5, anchor="center")
+        window.title("Microsoft Excel - Employees.xlsx")
+
+    elif bossKeyToggle == 0:
+        bossKeyLabel.place_forget()
+        window.title("Space Shooters")
 
 def setWindowDimensions(w,h):
     window = Tk()
@@ -512,6 +631,14 @@ playerShootSpeed = defaultPlayerShootSpeed
 isFastSpeed = 0
 isFastShooting = 0
 
+# leaderboard scores
+scoreFile = r"data/scores.json"
+try:
+    with open(scoreFile, 'r') as f:
+        scores = json.load(f)
+except FileNotFoundError:
+    scores = {}
+
 # aliens
 alienModels = [PhotoImage(file="aliens/alien1.png").subsample(9),
                PhotoImage(file="aliens/alien2.png").subsample(7)]
@@ -528,7 +655,17 @@ explosionImage = explosionModels[0]
 # setup boss key
 bossKeyToggle = 0
 bossKeyImage = PhotoImage(file="misc/bosskey.png")
-bossKeyLabel = Label(canvas, image=bossKeyImage, height=height, width=width)
+bossKeyLabel = Label(window, image=bossKeyImage, height=height, width=width, bg=None)
+
+# setup pause system
+pauseImage = PhotoImage(file="misc/pause.png")
+isPaused = 0
+
+# setup timer
+timeUpImage = PhotoImage(file="misc/timeup.png")
+timeUpCanvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
+defaultTime = 5
+timer = defaultTime
 
 # set score
 defaultScore = 0
