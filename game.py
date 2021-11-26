@@ -336,6 +336,17 @@ def selectDifficulty(num):
     if canvas.coords(createHealthText):
         canvas.itemconfig(createHealthText, text=healthText)
 
+def selectTime(num):
+    global timer, defaultTime, createTimerText
+    if num == 0:
+        defaultTime = 30
+    if num == 1:
+        defaultTime = 60
+    if num == 2:
+        defaultTime = 10
+
+    timer = defaultTime
+
 def updateName(enteredName):
     global name
     name = enteredName
@@ -397,35 +408,63 @@ def settingsMenu():
     d1 = Radiobutton(window, text="Normal", variable=v1, value=0)
     d1.configure(fg=front, bg=back, activebackground=active, selectcolor=active, padx=10, pady=5,
                  command=lambda: selectDifficulty(0), indicatoron=0)
-    d1Window = settingsCanvas.create_window(x, y-135, anchor=CENTER, window=d1)
+    d1Window = settingsCanvas.create_window(x, y-130, anchor=CENTER, window=d1)
 
     d2 = Radiobutton(window, text="Hard", variable=v1, value=1)
     d2.configure(fg=front, bg=back, activebackground=active, selectcolor=active, padx=10, pady=5,
                  command=lambda: selectDifficulty(1), indicatoron=0)
-    d2Window = settingsCanvas.create_window(x-100, y-135, anchor=CENTER, window=d2)
+    d2Window = settingsCanvas.create_window(x-100, y-130, anchor=CENTER, window=d2)
 
     d3 = Radiobutton(window, text="Insane", variable=v1, value=2)
     d3.configure(fg=front, bg=back, activebackground=active, selectcolor=active, padx=10, pady=5,
                  command=lambda: selectDifficulty(2), indicatoron=0)
-    d3Window = settingsCanvas.create_window(x+105, y-135, anchor=CENTER, window=d3)
+    d3Window = settingsCanvas.create_window(x+105, y-130, anchor=CENTER, window=d3)
 
     v2 = IntVar()
-    playerText = settingsCanvas.create_text(x, y-90,text="Choose a Ship:", fill="white")
+    playerText = settingsCanvas.create_text(x, y-80,text="Choose a Ship:", fill="white")
 
     r1 = Radiobutton(window, image=playerModels[0], variable=v2, value=0)
     r1.configure(fg=front, bg=back, activebackground=active, selectcolor=active,
                  command=lambda: selectCharacter(0), indicatoron = 0)
-    r1Window = settingsCanvas.create_window(x, y, anchor=CENTER, window=r1)
+    r1Window = settingsCanvas.create_window(x, y+10, anchor=CENTER, window=r1)
 
     r2 = Radiobutton(window, image=playerModels[1], variable=v2, value=1)
     r2.configure(fg=front, bg=back, activebackground=active, selectcolor=active,
                  command=lambda: selectCharacter(1), indicatoron = 0)
-    r2Window = settingsCanvas.create_window(x+150, y, anchor=CENTER, window=r2)
+    r2Window = settingsCanvas.create_window(x+150, y+10, anchor=CENTER, window=r2)
 
     r3 = Radiobutton(window, image=playerModels[2], variable=v2, value=2)
     r3.configure(fg=front, bg=back, activebackground=active, selectcolor=active,
                  command=lambda: selectCharacter(2), indicatoron = 0)
-    r3Window = settingsCanvas.create_window(x-150, y, anchor=CENTER, window=r3)
+    r3Window = settingsCanvas.create_window(x-150, y+10, anchor=CENTER, window=r3)
+
+    v3 = IntVar()
+    selectTimerText = settingsCanvas.create_text(x, y+110,text="Choose a Time:", fill="white")
+
+    t1 = Radiobutton(window, text="Medium", variable=v3, value=0)
+    t1.configure(fg=front, bg=back, activebackground=active, selectcolor=active, padx=10, pady=5,
+                 command=lambda: selectTime(0), indicatoron=0)
+    t1Window = settingsCanvas.create_window(x, y+150, anchor=CENTER, window=t1)
+
+    t2 = Radiobutton(window, text="Long", variable=v3, value=1)
+    t2.configure(fg=front, bg=back, activebackground=active, selectcolor=active, padx=10, pady=5,
+                 command=lambda: selectTime(1), indicatoron=0)
+    t2Window = settingsCanvas.create_window(x-100, y+150, anchor=CENTER, window=t2)
+
+    t3 = Radiobutton(window, text="Short", variable=v3, value=2)
+    t3.configure(fg=front, bg=back, activebackground=active, selectcolor=active, padx=10, pady=5,
+                 command=lambda: selectTime(2), indicatoron=0)
+    t3Window = settingsCanvas.create_window(x+105, y+150, anchor=CENTER, window=t3)
+
+    # nameText = settingsCanvas.create_text(x, y+110,text="Your Name:", fill="white")
+    # nameEntry = Entry(window)
+    # nameEntry.configure(fg=front, bg=back, width=15)
+    # nameEntryWindow = settingsCanvas.create_window(x, y+140, anchor=CENTER, window=nameEntry)
+
+    # nameButton = Button(window, text="Submit", anchor=CENTER)
+    # nameButton.configure(fg=front, bg=back, width=5, activebackground=active,
+    #                      command=lambda: updateName(nameEntry.get()))
+    # nameButtonWindow = settingsCanvas.create_window(x, y+180, anchor=CENTER, window=nameButton)
 
     quitButton = Button(window, text="Return to Menu", command=mainMenu, anchor=CENTER)
     quitButton.configure(fg=front, bg=back, width=11, activebackground=active)
@@ -553,7 +592,7 @@ def startGame():
     window.after(1500, lambda: drawAsteroid("asteroid2"))
 
 def instantiateGame():
-    global health, score, shotAvailable, canvas, isPaused
+    global health, score, time, shotAvailable, canvas, isPaused
     canvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
     health = defaultHealth
     score = defaultScore
@@ -789,7 +828,7 @@ isPaused = 0
 # setup timer
 timeUpImage = PhotoImage(file="misc/timeup.png")
 timeUpCanvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
-defaultTime = 10 # default is 30
+defaultTime = 30 # default is 30
 timer = defaultTime
 
 # set score
