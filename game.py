@@ -459,16 +459,6 @@ def settingsMenu():
                  command=lambda: selectTime(2), indicatoron=0)
     t3Window = settingsCanvas.create_window(x+105, y+150, anchor=CENTER, window=t3)
 
-    # nameText = settingsCanvas.create_text(x, y+110,text="Your Name:", fill="white")
-    # nameEntry = Entry(window)
-    # nameEntry.configure(fg=front, bg=back, width=15)
-    # nameEntryWindow = settingsCanvas.create_window(x, y+140, anchor=CENTER, window=nameEntry)
-
-    # nameButton = Button(window, text="Submit", anchor=CENTER)
-    # nameButton.configure(fg=front, bg=back, width=5, activebackground=active,
-    #                      command=lambda: updateName(nameEntry.get()))
-    # nameButtonWindow = settingsCanvas.create_window(x, y+180, anchor=CENTER, window=nameButton)
-
     quitButton = Button(window, text="Return to Menu", command=mainMenu, anchor=CENTER)
     quitButton.configure(fg=front, bg=back, width=11, activebackground=active)
     quitButtonWindow = settingsCanvas.create_window(x, y+240, anchor=CENTER, window=quitButton)
