@@ -185,25 +185,28 @@ def drawAlienMenu(tag):
 def alienUpdateMenu(name, side):
     global width, shotAvailable, score, menuCanvas
 
-    if menuCanvas.winfo_exists():
-        if side == "left":
-            menuCanvas.move(name,7,0)
-        elif side == "right":
-            menuCanvas.move(name,-7,0)
-        menuCanvas.update()
+    try:
+        if menuCanvas.winfo_exists():
+            if side == "left":
+                menuCanvas.move(name,7,0)
+            elif side == "right":
+                menuCanvas.move(name,-7,0)
+            menuCanvas.update()
 
-        if menuCanvas.coords(name):
-            alienCoords = menuCanvas.coords(name)
+            if menuCanvas.coords(name):
+                alienCoords = menuCanvas.coords(name)
 
-    if menuCanvas.winfo_exists():
-        # check if asteroid exists on screen, then execute if true
-        if alienCoords:
-            if (alienCoords[0] > width and side == "left" or
-                alienCoords[0] < 0 and side == "right"):
-                menuCanvas.delete(name)
-                drawAlienMenu(name)
-            else:
-                window.after(30, alienUpdateMenu, name, side)
+        if menuCanvas.winfo_exists():
+            # check if asteroid exists on screen, then execute if true
+            if alienCoords:
+                if (alienCoords[0] > width and side == "left" or
+                    alienCoords[0] < 0 and side == "right"):
+                    menuCanvas.delete(name)
+                    drawAlienMenu(name)
+                else:
+                    window.after(30, alienUpdateMenu, name, side)
+    except:
+        pass
 
 def drawAsteroid(tag):
     global width, height, asteroidImage
