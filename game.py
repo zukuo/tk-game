@@ -7,20 +7,18 @@ width = 1600
 height = 900
 
 def playerControls(event):
-    global player, playerModels
-
-    # ship randomiser / cheat code
-    if event.keysym == "r":
-        l = len(playerModels)-1
-        playerImageRandom = playerModels[randint(0,l)]
-        canvas.itemconfig(player, image=playerImageRandom)
+    global newKey
+    newKey = event.keysym
+    if bindsCanvas.winfo_exists():
+        newKeyText = "Current key selected: " + newKey
+        bindsCanvas.itemconfig(currentKeyText, text=newKeyText)    
 
     # shoot when space is pressed
-    if event.keysym == "space" and isPaused == 0:
+    if event.keysym == shootKey and isPaused == 0:
         playerShoot(event)
 
     # pause game on escape
-    if event.keysym == "Escape":
+    if event.keysym == pauseKey:
         pauseGame()
 
 def generateMoveStatus():
@@ -313,10 +311,30 @@ def fastSpeed(event):
     elif isFastSpeed == 0:
         playerSpeed = defaultPlayerSpeed
 
+def shipRandomiser(event):
+    global player, playerModels
+    l = len(playerModels)-1
+    playerImageRandom = playerModels[randint(0,l)]
+    canvas.itemconfig(player, image=playerImageRandom)
+
 def selectCharacter(num):
     global playerImage
     playerImage = playerModels[num]
     canvas.itemconfig(player, image=playerImage)
+
+def selectDifficulty(num):
+    global health, defaultHealth, healthText, createHealthText
+    if num == 0:
+        defaultHealth = 100
+    if num == 1:
+        defaultHealth = 50
+    if num == 2:
+        defaultHealth = 1
+
+    health = defaultHealth
+    healthText = "Health: " + str(health)
+    if canvas.coords(createHealthText):
+        canvas.itemconfig(createHealthText, text=healthText)
 
 def updateName(enteredName):
     global name
@@ -330,6 +348,8 @@ def mainMenu():
             settingsCanvas.destroy()
         if leaderCanvas.winfo_exists():
             leaderCanvas.destroy()
+        if bindsCanvas.winfo_exists():
+            bindsCanvas.destroy()
         if gameOverCanvas.winfo_exists():
             gameOverCanvas.destroy()
         if timeUpCanvas.winfo_exists():
@@ -352,9 +372,13 @@ def mainMenu():
     settingsButton.configure(fg=front, bg=back, width=10, activebackground=active)
     settingsButtonWindow = menuCanvas.create_window(x, y+100, anchor=CENTER, window=settingsButton)
 
+    bindsButton = Button(window, text="Keybinds", command=bindsMenu, anchor=CENTER)
+    bindsButton.configure(fg=front, bg=back, width=10, activebackground=active)
+    bindsButtonWindow = menuCanvas.create_window(x, y+150, anchor=CENTER, window=bindsButton)
+
     quitButton = Button(window, text="Quit", command=quit, anchor=CENTER)
     quitButton.configure(fg=front, bg=back, width=10, activebackground=active)
-    quitButtonWindow = menuCanvas.create_window(x, y+150, anchor=CENTER, window=quitButton)
+    quitButtonWindow = menuCanvas.create_window(x, y+200, anchor=CENTER, window=quitButton)
 
     menuCanvas.pack()
 
@@ -367,40 +391,131 @@ def settingsMenu():
     logo = settingsCanvas.create_image(x, y-250, image=settingsImage)
     active = "#DC6700"
 
-    difficultyText = settingsCanvas.create_text(x, y-150,text="Choose a Difficulty:", fill="white")
+    v1 = IntVar()
+    difficultyText = settingsCanvas.create_text(x, y-170,text="Choose a Difficulty:", fill="white")
 
+    d1 = Radiobutton(window, text="Normal", variable=v1, value=0)
+    d1.configure(fg=front, bg=back, activebackground=active, selectcolor=active, padx=10, pady=5,
+                 command=lambda: selectDifficulty(0), indicatoron=0)
+    d1Window = settingsCanvas.create_window(x, y-135, anchor=CENTER, window=d1)
+
+    d2 = Radiobutton(window, text="Hard", variable=v1, value=1)
+    d2.configure(fg=front, bg=back, activebackground=active, selectcolor=active, padx=10, pady=5,
+                 command=lambda: selectDifficulty(1), indicatoron=0)
+    d2Window = settingsCanvas.create_window(x-100, y-135, anchor=CENTER, window=d2)
+
+    d3 = Radiobutton(window, text="Insane", variable=v1, value=2)
+    d3.configure(fg=front, bg=back, activebackground=active, selectcolor=active, padx=10, pady=5,
+                 command=lambda: selectDifficulty(2), indicatoron=0)
+    d3Window = settingsCanvas.create_window(x+105, y-135, anchor=CENTER, window=d3)
+
+    v2 = IntVar()
     playerText = settingsCanvas.create_text(x, y-90,text="Choose a Ship:", fill="white")
 
-    r1 = Radiobutton(window, image=playerModels[0], value=0)
+    r1 = Radiobutton(window, image=playerModels[0], variable=v2, value=0)
     r1.configure(fg=front, bg=back, activebackground=active, selectcolor=active,
                  command=lambda: selectCharacter(0), indicatoron = 0)
     r1Window = settingsCanvas.create_window(x, y, anchor=CENTER, window=r1)
 
-    r2 = Radiobutton(window, image=playerModels[1], value=1)
+    r2 = Radiobutton(window, image=playerModels[1], variable=v2, value=1)
     r2.configure(fg=front, bg=back, activebackground=active, selectcolor=active,
                  command=lambda: selectCharacter(1), indicatoron = 0)
     r2Window = settingsCanvas.create_window(x+150, y, anchor=CENTER, window=r2)
 
-    r3 = Radiobutton(window, image=playerModels[2], value=2)
+    r3 = Radiobutton(window, image=playerModels[2], variable=v2, value=2)
     r3.configure(fg=front, bg=back, activebackground=active, selectcolor=active,
                  command=lambda: selectCharacter(2), indicatoron = 0)
     r3Window = settingsCanvas.create_window(x-150, y, anchor=CENTER, window=r3)
 
-    nameText = settingsCanvas.create_text(x, y+110,text="Your Name:", fill="white")
-    nameEntry = Entry(window)
-    nameEntry.configure(fg=front, bg=back, width=15)
-    nameEntryWindow = settingsCanvas.create_window(x, y+140, anchor=CENTER, window=nameEntry)
-
-    nameButton = Button(window, text="Submit", anchor=CENTER)
-    nameButton.configure(fg=front, bg=back, width=5, activebackground=active,
-                         command=lambda: updateName(nameEntry.get()))
-    nameButtonWindow = settingsCanvas.create_window(x, y+180, anchor=CENTER, window=nameButton)
-    
     quitButton = Button(window, text="Return to Menu", command=mainMenu, anchor=CENTER)
     quitButton.configure(fg=front, bg=back, width=11, activebackground=active)
     quitButtonWindow = settingsCanvas.create_window(x, y+240, anchor=CENTER, window=quitButton)
 
     settingsCanvas.pack()
+
+def bindsMenu():
+    global bindsCanvas, active, currentKeyText, createNewBindText
+    if not bindsCanvas.winfo_exists():
+        bindsCanvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
+    menuCanvas.destroy()
+    menuBackground = bindsCanvas.create_image(x, y, image=menuBackgroundImage)
+    binds = bindsCanvas.create_image(x, y-250, image=bindsImage)
+    active = "#9600C5"
+
+    text = "Press a key then select which control to bind it to:"
+    bindsText = bindsCanvas.create_text(x, y-150, text=text, fill="white", font="sans 12 bold")
+
+    bUp = Button(window, text="Up", command=lambda: rebindKey("up"), anchor=CENTER)
+    bUp.configure(fg=front, bg=back, activebackground=active)
+    bindsCanvas.create_window(x, y-100, anchor=CENTER, window=bUp)
+
+    bLeft = Button(window, text="Left", command=lambda: rebindKey("left"), anchor=CENTER)
+    bLeft.configure(fg=front, bg=back, activebackground=active)
+    bindsCanvas.create_window(x-80, y-50, anchor=CENTER, window=bLeft)
+    
+    bRight = Button(window, text="Right", command=lambda: rebindKey("right"), anchor=CENTER)
+    bRight.configure(fg=front, bg=back, activebackground=active)
+    bindsCanvas.create_window(x+80, y-50, anchor=CENTER, window=bRight)
+
+    bDown = Button(window, text="Down", command=lambda: rebindKey("down"), anchor=CENTER)
+    bDown.configure(fg=front, bg=back, activebackground=active)
+    bindsCanvas.create_window(x, y, anchor=CENTER, window=bDown)
+
+    bShoot = Button(window, text="Shoot", command=lambda: rebindKey("shoot"), anchor=CENTER)
+    bShoot.configure(fg=front, bg=back, activebackground=active)
+    bindsCanvas.create_window(x+50, y+70, anchor=CENTER, window=bShoot)
+
+    bPause = Button(window, text="Pause", command=lambda: rebindKey("pause"), anchor=CENTER)
+    bPause.configure(fg=front, bg=back, activebackground=active)
+    bindsCanvas.create_window(x-50, y+70, anchor=CENTER, window=bPause)
+
+    newKeyText = "Current key selected: " + newKey
+    currentKeyText = bindsCanvas.create_text(x, y+140, text=newKeyText, fill="white", font="sans 12 bold")
+
+    createNewBindText = bindsCanvas.create_text(x, y+180)
+
+    defaults = "Default Keybinds:\nUp - ↑, w\nDown - ↓, s\nRight - →, d\nLeft - ←, a\nShoot - space\nPause - escape\n"
+    defaultsText = bindsCanvas.create_text(x-500, y-65, text=defaults, fill="white", font="sans 12 bold")
+
+    cheats = "Cheat Codes:\nBoss Key - Ctrl-B\nShip Randomiser - Ctrl-R\nFast Firing - Ctrl-F\nFast Speed - Ctrl-F"
+    cheatsText = bindsCanvas.create_text(x+520, y-100, text=cheats, fill="white", font="sans 12 bold")
+
+    quitButton = Button(window, text="Return to Menu", command=mainMenu, anchor=CENTER)
+    quitButton.configure(fg=front, bg=back, width=11, activebackground=active)
+    quitButtonWindow = bindsCanvas.create_window(x, y+250, anchor=CENTER, window=quitButton)
+
+    restart = "(restart the game if you happen to mess up the keybinds)"
+    restartText = bindsCanvas.create_text(x, y+310, text=restart, fill="white", font="sans 10")
+
+    bindsCanvas.pack()
+
+def rebindKey(control):
+    global leftBinds, rightBinds, upBinds, downBinds, shootKey, pauseKey
+
+    if bindsCanvas.winfo_exists():
+        bindedText = "You just binded " +  "'" + newKey  +  "'" + " to " + control.title() + "!"
+        bindsCanvas.itemconfig(createNewBindText, text=bindedText, fill="white", font="sans 12 bold")
+    if 1 <= len(newKey) <= 20:
+        if control == "left":
+                leftBinds = (newKey)
+                generateMoveStatus()
+                setMoveBinds()
+        if control == "right":
+                rightBinds = (newKey)
+                generateMoveStatus()
+                setMoveBinds()
+        if control == "up":
+                upBinds = (newKey)
+                generateMoveStatus()
+                setMoveBinds()
+        if control == "down":
+                downBinds = (newKey)
+                generateMoveStatus()
+                setMoveBinds()
+        if control == "shoot":
+                shootKey = newKey
+        if control == "pause":
+                pauseKey = newKey
 
 def leaderMenu():
     global leaderCanvas, active
@@ -425,6 +540,9 @@ def startGame():
     if not canvas.winfo_exists():
         canvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
     menuCanvas.destroy()
+
+    if bindsCanvas.winfo_exists():
+        bindsCanvas.destroy()
 
     # create objects inside game canvas
     canvas.pack()
@@ -483,15 +601,6 @@ def gameOver():
     instantiateGame()
     gameOverCanvas.pack()
 
-def pauseGame():
-    global isPaused, pause
-    if bossKeyToggle == 0:
-        isPaused ^= 1
-        if isPaused == 1:
-            pause = canvas.create_image(x, y, image=pauseImage)
-        if isPaused == 0:
-            canvas.delete(pause)
-
 def timeUp():
     global timeUpCanvas, active
     if not timeUpCanvas.winfo_exists():
@@ -546,7 +655,12 @@ def updateTimer():
         timeUp()
 
 def updateScoreData(playerName, newScore):
-    scores[playerName.title()] = newScore
+    playerTitle = playerName.title()
+    if (playerTitle in scores) and (newScore > scores[playerTitle]):
+        scores[playerTitle] = newScore
+    if not (playerTitle in scores):
+        scores[playerTitle] = newScore
+
     with open(scoreFile, 'w+') as f:
         json.dump(scores, f, sort_keys=True, indent=2)
 
@@ -561,6 +675,15 @@ def createLeader():
         leaderCanvas.create_text(x, y+j, text=leaderText, font="sans 15 bold", fill="white")
         j += 40
         i += 1
+
+def pauseGame():
+    global isPaused, pause
+    if bossKeyToggle == 0:
+        isPaused ^= 1
+        if isPaused == 1:
+            pause = canvas.create_image(x, y, image=pauseImage)
+        if isPaused == 0:
+            canvas.delete(pause)
 
 def bossKey(event):
     global bossKeyToggle, bossKeyLabel, window, isPaused
@@ -596,11 +719,13 @@ canvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthick
 logoImage = PhotoImage(file="misc/logo.png")
 settingsImage = PhotoImage(file="misc/settings.png")
 leaderImage = PhotoImage(file="misc/leader.png")
+bindsImage = PhotoImage(file="misc/binds.png")
 menuBackgroundImage = PhotoImage(file="misc/menuback.png")
 
 menuCanvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
 settingsCanvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
 leaderCanvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
+bindsCanvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
 
 active = "#0BB93B"
 front = "#FFFFFF"
@@ -664,17 +789,17 @@ isPaused = 0
 # setup timer
 timeUpImage = PhotoImage(file="misc/timeup.png")
 timeUpCanvas = Canvas(window, width=width, height=height, bg="#2b2b2b", highlightthickness=0)
-defaultTime = 5
+defaultTime = 10 # default is 30
 timer = defaultTime
 
 # set score
-defaultScore = 0
+defaultScore = 0 # default is 0
 score = defaultScore
 scoreText = "Score: " + str(score)
 createScoreText = canvas.create_text(20, 20, anchor=NW, font="sans 20 bold", text=scoreText, fill="#3a852e")
 
 # set health
-defaultHealth = 10
+defaultHealth = 100 # default is 100
 health = defaultHealth
 healthText = "Health: " + str(health)
 createHealthText = canvas.create_text(20, 70, anchor=NW, font="sans 20 bold", text=healthText, fill="#cc272a")
@@ -688,8 +813,13 @@ downBinds = ("Down", "s")
 generateMoveStatus()
 setMoveBinds()
 
+newKey = ""
+shootKey = "space"
+pauseKey = "Escape"
+
 window.bind("<Key>", playerControls)
 window.bind("<Control-b>", bossKey)
+window.bind("<Control-r>", shipRandomiser)
 window.bind("<Control-f>", fastShooting) # cheat code
 window.bind("<Control-s>", fastSpeed) # cheat code
 
